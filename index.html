@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emon-Toto Dashboard - Final Version</title>
+    <title>Emon-Toto Dashboard - Full Integrated Version</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* --- GLOBAL & BACKGROUND --- */
@@ -19,25 +19,33 @@
         .bg-login { background-image: url('https://github.com/88xiaowu-dev/-xiaowurokok-/blob/main/emon%20bg%20dash.png?raw=true'); }
         .bg-home { background-image: url('https://github.com/88xiaowu-dev/-xiaowurokok-/blob/main/emon%20bg%20dash%201.png?raw=true'); }
         .bg-riwayat { background-image: url('https://github.com/88xiaowu-dev/-xiaowurokok-/blob/main/emon%20bg%20dash%202.png?raw=true'); }
+        .bg-absen { background-image: url('https://github.com/88xiaowu-dev/-xiaowurokok-/blob/main/emon%20bg%20dash%202.png?raw=true'); filter: hue-rotate(45deg); }
+        .bg-peraturan { background-image: url('https://github.com/88xiaowu-dev/-xiaowurokok-/blob/main/bg%20emon%20.png?raw=true'); }
 
         /* --- CONTAINER DASHBOARD --- */
         .container { 
-            background: rgba(0, 0, 0, 0.5); width: 95%;
+            background: rgba(0, 0, 0, 0.3); width: 98%;
             max-width: 400px; border-radius: 20px; 
             display: flex; flex-direction: column; overflow: hidden;
-            box-shadow: 0 5px px rgb(245, 70, 1);
+            box-shadow: 0 5px 25px rgba(245, 70, 1, 0.3);
             border: 1px solid rgb(255, 217, 0);
             backdrop-filter: none;
-            transition: max-width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: max-width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .dashboard-active { max-width: 1150px !important; flex-direction: row !important; height: 90vh; }
+        .dashboard-active { 
+            max-width: 1400px !important; 
+            flex-direction: row !important; 
+            height: 90vh; 
+            overflow: hidden;
+        }
 
         /* --- SIDEBAR NAV --- */
         nav { 
-            width: 260px; background: rgba(0, 0, 0, 0.5);
+            width: 240px; background: rgba(0, 0, 0, 0.5);
             padding: 30px 15px; display: none; flex-direction: column; gap: 10px;
             border-right: 1px solid rgba(255, 215, 0, 0.1);
+            flex-shrink: 0;
         }
         
         nav button { 
@@ -46,75 +54,80 @@
             transition: all 0.3s ease; font-weight: 500;
         }
 
-        /* EFEK HOVER NAVIGASI */
-        nav button:hover { 
-            background: rgba(5, 240, 248, 0.15); 
-            color: #05f0f8; 
-            padding-left: 25px; 
-        }
-
+        nav button:hover { background: rgba(5, 240, 248, 0.15); color: #05f0f8; padding-left: 25px; }
         nav button.active { background: #05f0f8; color: #000; font-weight: bold; }
 
-        /* --- CONTENT AREA --- */
-        .main-content { flex: 1; padding: 40px; display: none; color: white; overflow-y: auto; }
+        /* --- CONTENT AREA (SCROLL FIXED) --- */
+        .main-content { 
+            flex: 1; 
+            padding: 30px 40px; 
+            display: none; 
+            color: white; 
+            overflow-y: auto; 
+            max-height: 100%; 
+            box-sizing: border-box;
+        }
+
+        /* Custom Scrollbar Styles */
+        .main-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .main-content::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        .main-content::-webkit-scrollbar-thumb {
+            background: #05f0f8;
+            border-radius: 10px;
+        }
+
+        /* --- STYLING PERATURAN --- */
+        .rules-card { width: 100%; max-width: 800px; margin: 0 auto; }
+        .mq-container { overflow: hidden; background: rgba(17, 17, 17, 0.9); border-bottom: 2px solid #d11b1b; padding: 10px 0; position: relative; }
+        .mq-text { display: inline-block; white-space: nowrap; font-weight: bold; color: #ffde00; font-size: 14px; animation: scroll-left 20s linear infinite; }
+        .mq-danger-container { overflow: hidden; background: rgb(248, 252, 11); padding: 5px 0; }
+        .mq-danger-text { display: inline-block; white-space: nowrap; font-weight: 900; color: #000; font-size: 13px; animation: scroll-left 15s linear infinite; }
+
+        @keyframes scroll-left {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .rules-header { background: rgba(8, 8, 8, 0.1); color: white; padding: 25px 20px; text-align: center; }
+        .rules-header h1 { margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; }
+        .rules-content { padding: 10px 25px; }
+        .rule-item { display: flex; align-items: flex-start; margin-bottom: 12px; }
+        .rule-emoji { font-size: 20px; margin-right: 12px; min-width: 25px; }
+        .rule-text { font-size: 14px; line-height: 1.5; color: #f3eeee; font-weight: bold; }
+        .rule-text strong { color: #ffde00; }
+        .penalty { color: #51f803; font-weight: bold; padding: 1px 4px; border-radius: 3px; }
 
         /* JAM & TANGGAL */
-        #digital-clock { 
-            font-size: 3.8rem; color: #05f0f8; font-weight: bold; 
-            font-family: 'Courier New', Courier, monospace;
-            text-shadow: 0 0 25px rgba(5, 240, 248, 0.5); 
-            line-height: 1; margin-bottom: 5px;
-        }
-        #realtime-date { color: #FFD700; font-size: 1.2rem; letter-spacing: 1px; }
+        #digital-clock { font-size: 3.8rem; color: #05f0f8; font-weight: bold; font-family: 'Courier New', Courier, monospace; text-shadow: 0 0 25px rgba(5, 240, 248, 0.5); line-height: 1; margin-bottom: 5px; }
+        #realtime-date { color: #FFD700; font-size: 1.2rem; letter-spacing: 1px; font-weight: bold; }
 
-        /* TOMBOL AKSI */
-        .btn-action { 
-            padding: 15px; border-radius: 10px; border: none; color: white; 
-            font-weight: bold; cursor: pointer; flex: 1; 
-            transition: all 0.3s ease; text-transform: uppercase; font-size: 0.9rem;
-        }
+        /* STATISTIK BOX */
+        .stats-summary { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; padding: 20px; background: rgba(255, 255, 255, 0.1); border-radius: 15px; border: 1px solid rgba(255, 215, 0, 0.3); }
+        .stat-item { flex: 1; min-width: 150px; text-align: center; border-right: 1px solid rgba(255,255,255,0.1); }
+        .stat-item:last-child { border-right: none; }
+        .stat-label { font-size: 1rem; color: #f7f3f1; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; font-weight: bold;}
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: #00ff00; text-shadow: 0 0 15px rgba(0, 255, 0, 0.6); }
 
-        /* EFEK HOVER TOMBOL */
-        .btn-action:hover { 
-            filter: brightness(1.2); 
-            transform: translateY(-3px); 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4); 
-        }
-        .btn-action:active { transform: translateY(0); }
-
-        /* TABEL MONITOR */
-        .table-container { width: 100%; overflow-x: auto; margin-top: 20px; border-radius: 12px; }
+        /* TABEL STYLE */
+        .table-container { width: 100%; margin-top: 10px; border-radius: 12px; }
         table { width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.03); }
-        th { background: rgba(5, 240, 248, 0.1); color: #05f0f8; padding: 15px; text-transform: uppercase; font-size: 0.8rem; }
-        td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        th { background: rgba(5, 240, 248, 0.1); color:rgba(5, 242, 250, 0.973); padding: 15px; text-transform: uppercase; font-size: 0.8rem; border-bottom: 2px solid rgba(5, 240, 248, 0.3); }
+        td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; font-size: 0.9rem; }
 
-        /* EFEK HOVER BARIS TABEL */
-        table tbody tr { transition: background 0.3s; }
-        table tbody tr:hover { background: rgba(255, 255, 255, 0.08); }
+        /* FILTER & FORM */
+        .filter-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid rgba(255,215,0,0.2); }
+        .filter-box input { padding: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: #fff; }
+        .btn-action { padding: 15px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; flex: 1; transition: all 0.3s ease; text-transform: uppercase; }
+        .btn-action:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
+        .slot-info { background: rgba(255, 215, 0, 0.05); color: #FFD700; padding: 12px; border-radius: 10px; margin: 20px 0; border: 1px dashed rgba(255, 215, 0, 0.3); font-size: 0.95rem; text-align: center; }
 
-        /* STATUS TIMER */
-        .timer-safe { color: #28a745; font-weight: bold; }
-        .timer-danger { color: #ff4d4d; font-weight: bold; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.4; } }
-
-        /* SLOT INFO */
-        .slot-info { 
-            background: rgba(255, 215, 0, 0.05); color: #FFD700; 
-            padding: 12px; border-radius: 10px; margin: 20px 0; 
-            border: 1px dashed rgba(255, 215, 0, 0.3); font-size: 0.95rem; text-align: center;
-        }
-
-        /* LOGIN STYLE */
-        #login-section input { 
-            width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 10px; 
-            border: 1px solid #333; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box; 
-        }
-        #login-section button { 
-            width: 100%; padding: 15px; background: #ec5f0d; color: white; 
-            border: none; font-weight: bold; border-radius: 10px; cursor: pointer;
-            transition: all 0.3s ease; 
-        }
-        #login-section button:hover { background: #ff7518; box-shadow: 0 0 20px rgba(236, 95, 13, 0.5); }
+        /* LOGIN */
+        #login-section input { width:100%; padding:15px; margin-bottom:20px; border-radius:10px; border:1px solid #333; background:rgba(255,255,255,0.05); color:white; box-sizing:border-box; }
+        #login-section button { width:100%; padding:15px; background:#ec5f0d; color:white; border:none; font-weight:bold; border-radius:10px; cursor:pointer; }
     </style>
 </head>
 <body class="bg-login">
@@ -123,7 +136,7 @@
     <div id="login-section">
         <div style="padding: 50px; text-align: center;">
             <h2 style="color:#FFD700; letter-spacing: 3px; margin-bottom: 40px;">LOGIN STAFF</h2>
-            <input type="text" id="nik" placeholder="Masukkan Username">
+            <input type="text" id="nik" placeholder="Username">
             <input type="password" id="pass" placeholder="Password">
             <button onclick="handleLogin()">MASUK</button>
         </div>
@@ -132,7 +145,10 @@
     <nav id="sidebar">
         <div style="text-align:center; color:#FFD700; margin-bottom:40px; font-size: 1.4rem; letter-spacing: 2px;"><b>EMON-TOTO</b></div>
         <button id="nav-home" onclick="showSection('home')">🏠 Home</button>
-        <button id="nav-riwayat" onclick="showSection('riwayat')">📜 Riwayat</button>
+        <button id="nav-peraturan" onclick="showSection('peraturan')">⚖️ Peraturan Tim</button>
+        <button id="nav-riwayat" onclick="showSection('riwayat')">📜 Riwayat Izin</button>
+        <button id="nav-absen" onclick="showSection('absen')">📅 Riwayat Absen</button>
+        <button id="nav-staff" onclick="showSection('staff')" style="display:none">👥 Manajemen Staff</button>
         <button onclick="logout()" style="margin-top:auto; color:#ff4d4d;">🚪 Keluar</button>
     </nav>
 
@@ -143,43 +159,105 @@
                 <div id="digital-clock">00:00:00</div>
                 <div id="realtime-date">Memuat Tanggal...</div>
             </div>
-
-            <div id="slot-counter" class="slot-info">Mengecek ketersediaan slot...</div>
-
+            <div id="slot-counter" class="slot-info">Cek slot...</div>
             <div style="display:flex; gap:15px; margin: 25px 0;">
                 <button class="btn-action" style="background:#28a745" onclick="absen('masuk')">Absen Masuk</button>
-                <button class="btn-action" style="background:#fd7e14" onclick="absen('pulang')">Absen Pulang</button>
+                <button class="btn-action" style="background:#f78503" onclick="absen('pulang')">Absen Pulang</button>
             </div>
-            
-            <h4 style="display:flex; align-items:center; gap:10px;"><span style="font-size: 1.2rem;">👤</span> Staf Sedang di Luar</h4>
+            <h4>👤 Staf Sedang di Luar</h4>
             <div class="table-container">
                 <table>
                     <thead><tr><th>Nama Staf</th><th>Keperluan</th><th>Sisa Waktu</th></tr></thead>
                     <tbody id="monitor-body"></tbody>
                 </table>
             </div>
-
-            <h4 style="margin-top:40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">Form Izin</h4>
+            <h4 style="margin-top:40px;">Form Izin</h4>
             <select id="keperluan" style="width:100%; padding:15px; background:#222; color:white; border-radius:10px; border:1px solid #444; margin-bottom: 15px;">
                 <option value="">-- Pilih Keperluan --</option>
                 <option value="Toilet">Toilet (15 Menit)</option>
                 <option value="Ambil Makan">Ambil Makan (15 Menit)</option>
                 <option value="Merokok">Merokok (15 Menit)</option>
                 <option value="Istirahat">Istirahat (60 Menit)</option>
-                <option value="Keperluan Khusus wanita">Keperluan Khusus wanita(15 Menit)</option>
             </select>
             <div style="display:flex; gap:15px;">
                 <button id="btn-izin" onclick="izinKeluar()" class="btn-action" style="background:#007bff">Mulai Izin</button>
-                <button onclick="izinKembali()" class="btn-action" style="background:#6c757d">Kembali</button>
+                <button id="btn-kembali" onclick="izinKembali()" class="btn-action" style="background:#6c757d">Kembali</button>
+            </div>
+        </div>
+
+        <div id="sec-peraturan" style="display:none">
+            <div class="rules-card">
+                <div class="mq-container">
+                    <div class="mq-text">⚠️ PERHATIAN: PERATURAN INI BERLAKU UNTUK SELURUH TEAM MARKETING TANPA TERKECUALI! PATUHI ATAU TERIMA SANKSI! ⚠️</div>
+                </div>
+                <div class="rules-header">
+                    <h1>PERATURAN OFFICE TEAM</h1>
+                    <p style="color: #ffcece; font-weight: bold; margin-top: 5px; font-size:18px;">MARKETING</p>
+                </div>
+                <div class="rules-content">
+                    <div class="rule-item"><span class="rule-emoji">💢</span><div class="rule-text"><strong>JAM KERJA : </strong> 10.15 - 10.15.JIKA ADA LEMBUR SESUAIKAN JAM PULANG DENGAN JADWAL LEMBUR</div></div>
+                    <div class="rule-item"><span class="rule-emoji">💢</span><div class="rule-text"><strong>TRAINING : </strong> Wajib lembur 2 jam & <span class="penalty"> DILARANG KELUAR SELAMA 3 BULAN </span>(TIDAK MENERIMA ALASAN APAPUN).</div></div>
+                    <div class="rule-item"><span class="rule-emoji">💢</span><div class="rule-text"><strong>BREAKTIME : </strong> Jam 17.00 - 19.00.</div></div>
+                    <div class="rule-item"><span class="rule-emoji">💢</span><div class="rule-text"><strong>1 JAM PERTAMA : </strong> Dilarang keluar kecuali WC/Izin ATASAN.</div></div>
+                    <div class="rule-item"><span class="rule-emoji">💢</span><div class="rule-text"><strong>IZIN ROKOK : </strong> Capai 3 New (10 Menit).<span class="penalty">Lewat denda 500 BATH</span></div>Max 2x sehari.</div>
+                    <div class="rule-item"><span class="rule-emoji">💢</span><div class="rule-text"><strong>KELUAR/JAJAN : </strong> Max 20 menit (Gantian Max 3 org).<span class="penalty">Lewat denda 1.000 BATH.</span></div></div>
+                    <div class="rule-item"><span class="rule-emoji">💢</span><div class="rule-text"><strong>TOILET : </strong> Maksimal 15 menit. Selebihnya toleransi pimpinan</div></div>
+                    <div class="rule-item"><span class="rule-emoji">💢</span><div class="rule-text"><strong>SAKIT : </strong> Max 2 jam 30 menit. Selebihnya. <span class="penalty">POTONG OFF DAY 1 HARI.</span></div></div>
+                    <div class="rule-item"><span class="rule-emoji">💢</span><div class="rule-text"><strong>ABSEN : </strong> Manipulasi/Bohong denda <span class="penalty">5.000 BATH</span></div></div>
+                    <div class="rule-item"><span class="rule-emoji">💢</span><div class="rule-text"><strong>TOILET :</strong> Max 15 menit.</div></div>
+                    <div class="rule-item"><span class="rule-emoji">💢</span><div class="rule-text"><strong>TERLAMBAT :</strong> >1 menit denda  <span class="penalty">1.000 BATH + MASUK JAM 8 PAGI SELAMA 7 HARI</span>.Telat lagi denda<span class="penalty">4.000 BATH & GAJI DITAHAN.</span></div></div>
+                    <div class="rule-item"><span class="rule-emoji">💢</span><div class="rule-text"><strong>NONTON : </strong>Diluar SOP denda<span class="penalty">500 BATH.
+                </span></div></div>
+                </div>
+                <div class="mq-danger-container">
+                    <div class="mq-danger-text">PATUHI PERATURAN ATAU TERIMA SANKSI! --- KEDISIPLINAN ADALAH KUNCI TEAM!</div>
+                </div>
             </div>
         </div>
 
         <div id="sec-riwayat" style="display:none">
-            <h3>Riwayat Aktivitas</h3>
+            <h3>Riwayat Izin Pribadi</h3>
+            <div class="filter-box">
+                <input type="date" id="filter-date-izin" onchange="fetchRiwayat()">
+                <button onclick="fetchRiwayat()" style="padding:10px; background:#FFD700; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Cari</button>
+            </div>
             <div class="table-container">
-                <table style="min-width: 800px;">
-                    <thead><tr><th>Nama</th><th>Keluar</th><th>Kembali</th><th>Durasi</th><th>Keperluan</th><th>Keterangan</th></tr></thead>
+                <table>
+                    <thead><tr><th>Nama</th><th>Keluar</th><th>Kembali</th><th>Durasi</th><th>Keperluan</th><th>Status</th></tr></thead>
                     <tbody id="body-izin"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="sec-absen" style="display:none">
+            <h3>Riwayat Absensi Seluruh Staff</h3>
+            <div class="filter-box">
+                <input type="date" id="filter-date-absen" onchange="fetchRiwayatAbsen()">
+                <button onclick="fetchRiwayatAbsen()" style="padding:10px 20px; background:#7af803; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Refresh</button>
+            </div>
+            <div class="stats-summary">
+                <div class="stat-item"><div class="stat-label">Total</div><div id="stat-total" class="stat-value">0</div></div>
+                <div class="stat-item"><div class="stat-label">Masuk</div><div id="stat-masuk" class="stat-value">0</div></div>
+                <div class="stat-item"><div class="stat-label">Pulang</div><div id="stat-pulang" class="stat-value">0</div></div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Nama Staf</th><th>Status Masuk</th><th>Jam Masuk</th><th>Status Pulang</th><th>Jam Pulang</th></tr>
+                    </thead>
+                    <tbody id="body-absen-all"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="sec-staff" style="display:none">
+            <h3>Manajemen Data Staff</h3>
+            <div class="table-container" style="overflow-x: auto;">
+                <table style="min-width: 600px;">
+                    <thead>
+                        <tr><th>Nama Staf</th><th>Role</th><th>Email Sistem</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody id="body-manage-staff"></tbody>
                 </table>
             </div>
         </div>
@@ -187,109 +265,122 @@
 </div>
 
 <script>
-    // KONFIGURASI SUPABASE
     const SB_URL = "https://crmuanjyoffemqoxqarj.supabase.co";
     const SB_KEY = "sb_publishable_0gKE7N1uNHMNEOzcZIEqHQ_OT4HcAHG";
     const client = supabase.createClient(SB_URL, SB_KEY);
     
-    let userSession = null;
-    let userProfile = null;
-    let activeIzinData = [];
+    let userSession = null, userProfile = null, activeIzinData = [];
 
-    // --- WAKTU & TANGGAL REALTIME ---
+    window.onload = () => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('filter-date-absen').value = today;
+        document.getElementById('filter-date-izin').value = today;
+        checkSession();
+    };
+
     function updateDateTime() {
         const now = new Date();
         document.getElementById('digital-clock').innerText = now.toLocaleTimeString('en-GB');
-        document.getElementById('realtime-date').innerText = now.toLocaleDateString('id-ID', { 
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-        });
+        document.getElementById('realtime-date').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         updateCountdowns();
     }
     setInterval(updateDateTime, 1000);
 
-    // --- LOGIKA HITUNG MUNDUR (COUNTDOWN) ---
     function updateCountdowns() {
         const monitorBody = document.getElementById('monitor-body');
-        if (!activeIzinData.length) return;
-
+        if (!activeIzinData.length) {
+            monitorBody.innerHTML = '<tr><td colspan="3" style="padding:30px; color:#00ff00; text-align:center;">✅ Semua staf berada di kantor.</td></tr>';
+            return;
+        }
         let html = '';
         activeIzinData.forEach(iz => {
-            const limitMenit = (iz.keperluan === 'Istirahat') ? 60 : 15;
-            const limitMs = limitMenit * 60 * 1000;
+            const limit = (iz.keperluan === 'Istirahat') ? 60 : 15;
             const elapsed = new Date().getTime() - new Date(iz.jam_keluar).getTime();
-            const remaining = limitMs - elapsed;
-            
-            const isLate = remaining <= 0;
-            const absRem = Math.abs(remaining);
-            const m = Math.floor(absRem / 60000);
-            const s = Math.floor((absRem % 60000) / 1000);
-            
-            const timerText = isLate ? `-${m}m ${s}s (Terlambat)` : `${m}m ${s}s`;
-            
-            html += `<tr>
-                <td><b>${iz.nama_staf}</b></td>
-                <td><span style="background:rgba(255,255,255,0.1); padding:4px 8px; border-radius:5px;">${iz.keperluan}</span></td>
-                <td class="${isLate?'timer-danger':'timer-safe'}">${timerText}</td>
-            </tr>`;
+            const rem = (limit * 60 * 1000) - elapsed;
+            const isLate = rem <= 0;
+            const absRem = Math.abs(rem);
+            const m = Math.floor(absRem / 60000), s = Math.floor((absRem % 60000) / 1000);
+            html += `<tr><td><b>${iz.nama_staf}</b></td><td>${iz.keperluan}</td><td style="color:${isLate?'#ff4d4d':'#00ff00'}">${isLate?'-':''}${m}m ${s}s</td></tr>`;
         });
         monitorBody.innerHTML = html;
     }
 
-    // --- FETCH DATA MONITOR & SLOT ---
     async function fetchMonitor() {
-        const { data: izinAktif } = await client.from('izin').select('user_id, jam_keluar, keperluan').is('jam_kembali', null);
-        const { data: profiles } = await client.from('profiles').select('id, nama_staf');
-        
-        activeIzinData = (izinAktif || []).map(iz => ({
-            ...iz,
-            nama_staf: profiles.find(p => p.id === iz.user_id)?.nama_staf || 'Staf'
-        }));
-
+        const { data: izins } = await client.from('izin').select('user_id, jam_keluar, keperluan').is('jam_kembali', null);
+        const { data: profs } = await client.from('profiles').select('id, nama_staf');
+        activeIzinData = (izins || []).map(iz => ({ ...iz, nama_staf: profs.find(p => p.id === iz.user_id)?.nama_staf || 'Staf' }));
         const count = activeIzinData.length;
-        const slotEl = document.getElementById('slot-counter');
-        const btnIzin = document.getElementById('btn-izin');
-
-        if (count >= 3) {
-            slotEl.innerHTML = `⚠️ <b>SLOT PENUH!</b> Semua slot (3/3) sedang digunakan.`;
-            slotEl.style.color = "#ff4d4d";
-            btnIzin.style.opacity = "0.3";
-            btnIzin.style.cursor = "not-allowed";
-        } else {
-            slotEl.innerHTML = `✅ <b>SLOT TERSEDIA:</b> Tersisa ${3 - count} slot izin.`;
-            slotEl.style.color = "#FFD700";
-            btnIzin.style.opacity = "1";
-            btnIzin.style.cursor = "pointer";
-        }
-
-        if (!activeIzinData.length) {
-            document.getElementById('monitor-body').innerHTML = '<tr><td colspan="3" style="padding:30px; color:#00ff00;">✅ Semua staf berada di kantor.</td></tr>';
-        }
+        const sedangKeluar = activeIzinData.some(iz => iz.user_id === userSession.id);
+        document.getElementById('btn-izin').disabled = sedangKeluar || count >= 3;
+        document.getElementById('btn-kembali').disabled = !sedangKeluar;
+        document.getElementById('slot-counter').innerHTML = count >= 3 ? `<span style="color:#ff4d4d">Slot Penuh (3/3)</span>` : `Slot Tersedia (${3-count}/3)`;
     }
 
-    // --- FITUR IZIN ---
-    async function izinKeluar() {
-        const { data: currentOut } = await client.from('izin').select('id').is('jam_kembali', null);
-        if (currentOut && currentOut.length >= 3) {
-            alert("Batas maksimal 3 orang terpenuhi!");
-            return;
-        }
-
-        const ket = document.getElementById('keperluan').value;
-        if(!ket) return alert("Pilih keperluan Anda!");
-
-        await client.from('izin').insert([{ 
-            user_id: userSession.id, keperluan: ket, jam_keluar: new Date().toISOString() 
-        }]);
-        fetchMonitor();
+    async function fetchRiwayat() {
+        const date = document.getElementById('filter-date-izin').value;
+        const { data } = await client.from('izin').select('*').eq('user_id', userSession.id).gte('jam_keluar', date+'T00:00:00').lte('jam_keluar', date+'T23:59:59').order('jam_keluar', {ascending: false});
+        document.getElementById('body-izin').innerHTML = (data || []).map(i => {
+            let durasi = "-", status = "-";
+            if (i.jam_kembali) {
+                const diff = Math.floor((new Date(i.jam_kembali) - new Date(i.jam_keluar)) / 60000);
+                durasi = diff + "m";
+                status = diff > (i.keperluan === 'Istirahat' ? 60 : 15) ? '<span style="color:#ff4d4d">Late</span>' : '<span style="color:#28a745">On Time</span>';
+            }
+            return `<tr><td>${userProfile.nama_staf}</td><td>${new Date(i.jam_keluar).toLocaleTimeString()}</td><td>${i.jam_kembali?new Date(i.jam_kembali).toLocaleTimeString():'-'}</td><td>${durasi}</td><td>${i.keperluan}</td><td>${status}</td></tr>`;
+        }).join('');
     }
 
-    async function izinKembali() {
-        await client.from('izin').update({ jam_kembali: new Date().toISOString() })
-            .match({ user_id: userSession.id }).is('jam_kembali', null);
-        fetchMonitor();
+    async function fetchRiwayatAbsen() {
+        const selectedDate = document.getElementById('filter-date-absen').value;
+        const { data: profiles } = await client.from('profiles').select('id, nama_staf').order('nama_staf');
+        const { data: absensiData } = await client.from('absensi').select('*').gte('waktu_masuk', selectedDate+'T00:00:00').lte('waktu_masuk', selectedDate+'T23:59:59');
+        let countTotal = profiles.length, countMasuk = 0, countPulang = 0;
+        document.getElementById('body-absen-all').innerHTML = (profiles || []).map(p => {
+            const row = absensiData ? absensiData.find(a => a.user_id === p.id) : null;
+            if (row) countMasuk++; if (row?.waktu_pulang) countPulang++;
+            const statusMasuk = row ? '<span style="color:#F3F700;">Sudah Masuk</span>' : '<span style="color:#FF52B1;">Belum</span>';
+            const statusPulang = row?.waktu_pulang ? '<span style="color:#FF52B1;">Sudah Pulang</span>' : '<span style="color:#5258FF;">Belum</span>';
+            return `<tr><td><b>${p.nama_staf}</b></td><td>${statusMasuk}</td><td>${row?new Date(row.waktu_masuk).toLocaleTimeString('en-GB'):'-'}</td><td>${statusPulang}</td><td>${row?.waktu_pulang?new Date(row.waktu_pulang).toLocaleTimeString('en-GB'):'-'}</td></tr>`;
+        }).join('');
+        document.getElementById('stat-total').innerText = countTotal;
+        document.getElementById('stat-masuk').innerText = countMasuk;
+        document.getElementById('stat-pulang').innerText = countPulang;
     }
 
-    // --- SESSION & NAVIGATION ---
+    async function fetchManageStaff() {
+        const { data: profiles } = await client.from('profiles').select('id, nama_staf, role');
+        document.getElementById('body-manage-staff').innerHTML = (profiles || []).map(p => `
+            <tr>
+                <td style="text-align:left;"><b>${p.nama_staf}</b></td>
+                <td><span style="color:${p.role === 'admin' ? '#ff4d4d' : '#00ff00'}">${p.role.toUpperCase()}</span></td>
+                <td>${p.nama_staf.toLowerCase().replace(/\s/g, '')}@kantor.com</td>
+                <td><button onclick="paksaResetPassword('${p.id}', '${p.nama_staf}')" style="background:#007bff; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Reset</button></td>
+            </tr>`).join('');
+    }
+
+    async function paksaResetPassword(userId, namaStaf) {
+        const newPass = prompt(`Password baru untuk ${namaStaf}:`);
+        if (!newPass || newPass.length < 6) return alert("Minimal 6 karakter!");
+        const { error } = await client.rpc('admin_change_password', { target_user_id: userId, new_password: newPass });
+        if (error) alert("Gagal: " + error.message); else alert("Berhasil!");
+    }
+
+    function showSection(id) {
+        ['sec-home', 'sec-peraturan', 'sec-riwayat', 'sec-absen', 'sec-staff'].forEach(s => {
+            const el = document.getElementById(s);
+            if(el) el.style.display = s === 'sec-'+id ? 'block' : 'none';
+        });
+        ['nav-home', 'nav-peraturan', 'nav-riwayat', 'nav-absen', 'nav-staff'].forEach(n => {
+            const el = document.getElementById(n);
+            if(el) el.className = n === 'nav-'+id ? 'active' : '';
+        });
+        document.body.className = 'bg-' + (id === 'staff' ? 'absen' : id);
+        if(id === 'home') fetchMonitor(); 
+        else if(id === 'riwayat') fetchRiwayat(); 
+        else if(id === 'absen') fetchRiwayatAbsen();
+        else if(id === 'staff') fetchManageStaff();
+    }
+
     async function checkSession() {
         const { data: { session } } = await client.auth.getSession();
         if (session) {
@@ -300,69 +391,37 @@
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('sidebar').style.display = 'flex';
             document.getElementById('main-content').style.display = 'block';
-            document.getElementById('user-name').innerText = p?.nama_staf || 'User';
-            showSection('home');
-            setupRealtime();
-        }
-    }
-
-    function setupRealtime() {
-        client.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'izin' }, () => {
-            fetchMonitor();
-        }).subscribe();
-    }
-
-    function showSection(id) {
-        document.getElementById('sec-home').style.display = id === 'home' ? 'block' : 'none';
-        document.getElementById('sec-riwayat').style.display = id === 'riwayat' ? 'block' : 'none';
-        document.body.className = 'bg-' + id;
-        document.getElementById('nav-home').className = id === 'home' ? 'active' : '';
-        document.getElementById('nav-riwayat').className = id === 'riwayat' ? 'active' : '';
-        if(id === 'home') fetchMonitor(); else fetchRiwayat();
-    }
-
-    async function fetchRiwayat() {
-        const namaUser = userProfile?.nama_staf || 'Staf';
-        const { data: dbIzin } = await client.from('izin').select('*').eq('user_id', userSession.id).order('jam_keluar', {ascending: false});
-        
-        document.getElementById('body-izin').innerHTML = dbIzin?.map(i => {
-            let durasiText = "-"; let statusBadge = "-";
-            if (i.jam_kembali) {
-                const diffMenit = Math.floor((new Date(i.jam_kembali) - new Date(i.jam_keluar)) / 60000);
-                durasiText = diffMenit + "m";
-                const limit = (i.keperluan === 'Istirahat') ? 60 : 15;
-                statusBadge = diffMenit > limit ? `<span style="color:#ff4d4d; font-weight:bold;">Terlambat</span>` : `<span style="color:#28a745; font-weight:bold;">Tepat Waktu</span>`;
-            } else { durasiText = "Diluar"; }
+            document.getElementById('user-name').innerText = p.nama_staf;
             
-            return `<tr>
-                <td><b>${namaUser}</b></td>
-                <td>${new Date(i.jam_keluar).toLocaleTimeString()}</td>
-                <td>${i.jam_kembali ? new Date(i.jam_kembali).toLocaleTimeString() : '-'}</td>
-                <td>${durasiText}</td>
-                <td>${i.keperluan}</td>
-                <td>${statusBadge}</td>
-            </tr>`;
-        }).join('') || '';
+            if (p.role === 'admin') {
+                document.getElementById('nav-absen').style.display = 'block';
+                document.getElementById('nav-staff').style.display = 'block';
+            }
+            showSection('home');
+        }
     }
 
     async function handleLogin() {
-        const nik = document.getElementById('nik').value;
-        const pass = document.getElementById('pass').value;
+        const nik = document.getElementById('nik').value, pass = document.getElementById('pass').value;
         const { error } = await client.auth.signInWithPassword({ email: nik + "@kantor.com", password: pass });
-        if (error) alert("Username atau Password salah!"); else location.reload();
+        if (error) alert("Gagal Login!"); else location.reload();
     }
 
-    async function absen(tipe) {
-        if(tipe === 'masuk') {
-            await client.from('absensi').insert([{ user_id: userSession.id, waktu_masuk: new Date().toISOString() }]);
-        } else {
-            await client.from('absensi').update({ waktu_pulang: new Date().toISOString() }).match({ user_id: userSession.id }).is('waktu_pulang', null);
-        }
-        alert("Berhasil dicatat!");
+    async function absen(t) {
+        if(t === 'masuk') await client.from('absensi').insert([{ user_id: userSession.id, waktu_masuk: new Date().toISOString() }]);
+        else await client.from('absensi').update({ waktu_pulang: new Date().toISOString() }).match({ user_id: userSession.id }).is('waktu_pulang', null);
+        alert("Berhasil!"); fetchRiwayatAbsen();
     }
+
+    async function izinKeluar() {
+        const ket = document.getElementById('keperluan').value; if(!ket) return alert("Pilih keperluan!");
+        await client.from('izin').insert([{ user_id: userSession.id, keperluan: ket, jam_keluar: new Date().toISOString() }]);
+        fetchMonitor();
+    }
+
+    async function izinKembali() { await client.from('izin').update({ jam_kembali: new Date().toISOString() }).match({ user_id: userSession.id }).is('jam_kembali', null); fetchMonitor(); }
 
     async function logout() { await client.auth.signOut(); location.reload(); }
-    window.onload = checkSession;
 </script>
 </body>
 </html>
