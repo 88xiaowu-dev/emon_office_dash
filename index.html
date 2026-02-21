@@ -338,8 +338,8 @@
         document.getElementById('body-absen-all').innerHTML = (profiles || []).map(p => {
             const row = absensiData ? absensiData.find(a => a.user_id === p.id) : null;
             if (row) countMasuk++; if (row?.waktu_pulang) countPulang++;
-            const statusMasuk = row ? '<span style="color:#F3F700;">Sudah Masuk</span>' : '<span style="color:#FF52B1;">Belum</span>';
-            const statusPulang = row?.waktu_pulang ? '<span style="color:#FF52B1;">Sudah Pulang</span>' : '<span style="color:#5258FF;">Belum</span>';
+            const statusMasuk = row ? '<span style="color:#F3F700; font-weight: bold;">Sudah Masuk</span>' : '<span style="color:#FF52B1; font-weight: bold;">Belum</span>';
+            const statusPulang = row?.waktu_pulang ? '<span style="color:#FF52B1;font-weight: bold;">Sudah Pulang</span>' : '<span style="color:#5258FF;font-weight: bold;">Belum</span>';
             return `<tr><td><b>${p.nama_staf}</b></td><td>${statusMasuk}</td><td>${row?new Date(row.waktu_masuk).toLocaleTimeString('en-GB'):'-'}</td><td>${statusPulang}</td><td>${row?.waktu_pulang?new Date(row.waktu_pulang).toLocaleTimeString('en-GB'):'-'}</td></tr>`;
         }).join('');
         document.getElementById('stat-total').innerText = countTotal;
@@ -425,3 +425,4 @@
 </script>
 </body>
 </html>
+
