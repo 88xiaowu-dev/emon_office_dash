@@ -21,6 +21,7 @@
         .bg-riwayat { background-image: url('https://github.com/88xiaowu-dev/-xiaowurokok-/blob/main/emon%20bg%20dash%202.png?raw=true'); }
         .bg-absen { background-image: url('https://github.com/88xiaowu-dev/-xiaowurokok-/blob/main/emon%20bg%20dash%202.png?raw=true'); filter: hue-rotate(45deg); }
         .bg-peraturan { background-image: url('https://github.com/88xiaowu-dev/-xiaowurokok-/blob/main/bg%20emon%20.png?raw=true'); }
+        .bg-rekap { background-image: url('https://github.com/88xiaowu-dev/-xiaowurokok-/blob/main/emon%20bg%20dash%202.png?raw=true'); filter: saturate(1.5) hue-rotate(-15deg); }
 
         /* --- CONTAINER DASHBOARD --- */
         .container { 
@@ -149,6 +150,7 @@
         <button id="nav-riwayat" onclick="showSection('riwayat')">📜 Riwayat Izin</button>
         <button id="nav-absen" onclick="showSection('absen')">📅 Riwayat Absen</button>
         <button id="nav-staff" onclick="showSection('staff')" style="display:none">👥 Manajemen Staff</button>
+        <button id="nav-rekap" onclick="showSection('rekap')" style="display:none">⚠️ Rekap Pelanggaran</button>
         <button onclick="logout()" style="margin-top:auto; color:#ff4d4d;">🚪 Keluar</button>
     </nav>
 
@@ -175,9 +177,9 @@
             <select id="keperluan" style="width:100%; padding:15px; background:#222; color:white; border-radius:10px; border:1px solid #444; margin-bottom: 15px;">
                 <option value="">-- Pilih Keperluan --</option>
                 <option value="Toilet">Toilet (15 Menit)</option>
-                <option value="Ambil Makan">Ambil Makan (15 Menit)</option>
-                <option value="Merokok">Merokok (15 Menit)</option>
-                <option value="Istirahat">Istirahat (60 Menit)</option>
+                <option value="Ambil Makan">Ambil Makan (20 Menit)</option>
+                <option value="Merokok">Merokok (10 Menit)</option>
+                <option value="Istirahat">Istirahat (120 Menit)</option>
             </select>
             <div style="display:flex; gap:15px;">
                 <button id="btn-izin" onclick="izinKeluar()" class="btn-action" style="background:#007bff">Mulai Izin</button>
@@ -261,6 +263,27 @@
                 </table>
             </div>
         </div>
+        <div id="sec-rekap" style="display:none">
+    <h3 style="color: #ff4d4d;">Data Pelanggaran & Denda</h3>
+    <div class="filter-box">
+        <input type="month" id="filter-bulan-rekap" style="padding:10px; border-radius:5px; background:#222; color:white; border:1px solid #444;">
+        <button onclick="fetchRekapPelanggaran()" style="padding:10px 20px; background:#ff4d4d; border:none; border-radius:5px; color:white; font-weight:bold; cursor:pointer;">Cek Pelanggaran</button>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nama Staf</th>
+                    <th>Jenis Pelanggaran</th>
+                    <th>Tanggal</th>
+                    <th>Keterangan</th>
+                    <th>Denda</th>
+                </tr>
+            </thead>
+            <tbody id="body-rekap-pelanggaran"></tbody>
+        </table>
+    </div>
+</div>
     </div>
 </div>
 
@@ -317,18 +340,37 @@
     }
 
     async function fetchRiwayat() {
-        const date = document.getElementById('filter-date-izin').value;
-        const { data } = await client.from('izin').select('*').eq('user_id', userSession.id).gte('jam_keluar', date+'T00:00:00').lte('jam_keluar', date+'T23:59:59').order('jam_keluar', {ascending: false});
-        document.getElementById('body-izin').innerHTML = (data || []).map(i => {
-            let durasi = "-", status = "-";
-            if (i.jam_kembali) {
-                const diff = Math.floor((new Date(i.jam_kembali) - new Date(i.jam_keluar)) / 60000);
-                durasi = diff + "m";
-                status = diff > (i.keperluan === 'Istirahat' ? 60 : 15) ? '<span style="color:#ff4d4d">Late</span>' : '<span style="color:#28a745">On Time</span>';
-            }
-            return `<tr><td>${userProfile.nama_staf}</td><td>${new Date(i.jam_keluar).toLocaleTimeString()}</td><td>${i.jam_kembali?new Date(i.jam_kembali).toLocaleTimeString():'-'}</td><td>${durasi}</td><td>${i.keperluan}</td><td>${status}</td></tr>`;
-        }).join('');
+    const date = document.getElementById('filter-date-izin').value;
+    
+    // Kita tambahkan 'profiles(nama_staf)' agar nama staf muncul di tabel admin
+    let query = client.from('izin').select('*, profiles(nama_staf)');
+
+    // Filter Admin vs User
+    if (userProfile.role !== 'admin') {
+        query = query.eq('user_id', userSession.id);
     }
+
+    const { data, error } = await query
+        .gte('jam_keluar', date + 'T00:00:00')
+        .lte('jam_keluar', date + 'T23:59:59')
+        .order('jam_keluar', { ascending: false });
+
+    if (error) return console.error(error);
+
+    document.getElementById('body-izin').innerHTML = (data || []).map(i => {
+        // Jika admin yang melihat, ambil nama dari hasil join profiles
+        const nama = i.profiles ? i.profiles.nama_staf : userProfile.nama_staf;
+        
+        let durasi = "-", status = "-";
+        if (i.jam_kembali) {
+            const diff = Math.floor((new Date(i.jam_kembali) - new Date(i.jam_keluar)) / 60000);
+            durasi = diff + "m";
+            const limit = i.keperluan === 'Istirahat' ? 120 : (i.keperluan === 'Toilet' ? 15 : 20);
+            status = diff > limit ? '<span style="color:#ff4d4d;font-weight: bold;">Late</span>' : '<span style="color:#28a745;font-weight: bold;">On Time</span>';
+        }
+        return `<tr><td>${nama}</td><td>${new Date(i.jam_keluar).toLocaleTimeString()}</td><td>${i.jam_kembali?new Date(i.jam_kembali).toLocaleTimeString():'-'}</td><td>${durasi}</td><td>${i.keperluan}</td><td>${status}</td></tr>`;
+    }).join('');
+}
 
     async function fetchRiwayatAbsen() {
         const selectedDate = document.getElementById('filter-date-absen').value;
@@ -338,7 +380,7 @@
         document.getElementById('body-absen-all').innerHTML = (profiles || []).map(p => {
             const row = absensiData ? absensiData.find(a => a.user_id === p.id) : null;
             if (row) countMasuk++; if (row?.waktu_pulang) countPulang++;
-            const statusMasuk = row ? '<span style="color:#F3F700; font-weight: bold;">Sudah Masuk</span>' : '<span style="color:#FF52B1; font-weight: bold;">Belum</span>';
+            const statusMasuk = row ? '<span style="color:#F3F700;font-weight: bold;">Sudah Masuk</span>' : '<span style="color:#FF52B1;font-weight: bold;">Belum</span>';
             const statusPulang = row?.waktu_pulang ? '<span style="color:#FF52B1;font-weight: bold;">Sudah Pulang</span>' : '<span style="color:#5258FF;font-weight: bold;">Belum</span>';
             return `<tr><td><b>${p.nama_staf}</b></td><td>${statusMasuk}</td><td>${row?new Date(row.waktu_masuk).toLocaleTimeString('en-GB'):'-'}</td><td>${statusPulang}</td><td>${row?.waktu_pulang?new Date(row.waktu_pulang).toLocaleTimeString('en-GB'):'-'}</td></tr>`;
         }).join('');
@@ -366,20 +408,25 @@
     }
 
     function showSection(id) {
-        ['sec-home', 'sec-peraturan', 'sec-riwayat', 'sec-absen', 'sec-staff'].forEach(s => {
-            const el = document.getElementById(s);
-            if(el) el.style.display = s === 'sec-'+id ? 'block' : 'none';
-        });
-        ['nav-home', 'nav-peraturan', 'nav-riwayat', 'nav-absen', 'nav-staff'].forEach(n => {
-            const el = document.getElementById(n);
-            if(el) el.className = n === 'nav-'+id ? 'active' : '';
-        });
-        document.body.className = 'bg-' + (id === 'staff' ? 'absen' : id);
-        if(id === 'home') fetchMonitor(); 
-        else if(id === 'riwayat') fetchRiwayat(); 
-        else if(id === 'absen') fetchRiwayatAbsen();
-        else if(id === 'staff') fetchManageStaff();
-    }
+    // Tambahkan 'sec-rekap' di sini
+    ['sec-home', 'sec-peraturan', 'sec-riwayat', 'sec-absen', 'sec-staff', 'sec-rekap'].forEach(s => {
+        const el = document.getElementById(s);
+        if(el) el.style.display = s === 'sec-'+id ? 'block' : 'none';
+    });
+    // Tambahkan 'nav-rekap' di sini
+    ['nav-home', 'nav-peraturan', 'nav-riwayat', 'nav-absen', 'nav-staff', 'nav-rekap'].forEach(n => {
+        const el = document.getElementById(n);
+        if(el) el.className = n === 'nav-'+id ? 'active' : '';
+    });
+    
+    // Sisa kodenya tetap sama...
+    document.body.className = 'bg-' + (id === 'staff' ? 'absen' : id);
+    if(id === 'home') fetchMonitor(); 
+    else if(id === 'riwayat') fetchRiwayat(); 
+    else if(id === 'absen') fetchRiwayatAbsen();
+    else if(id === 'staff') fetchManageStaff();
+    else if(id === 'rekap') fetchRekapPelanggaran(); // Ini sudah benar kamu masukkan
+}
 
     async function checkSession() {
         const { data: { session } } = await client.auth.getSession();
@@ -392,7 +439,7 @@
             document.getElementById('sidebar').style.display = 'flex';
             document.getElementById('main-content').style.display = 'block';
             document.getElementById('user-name').innerText = p.nama_staf;
-            
+            document.getElementById('nav-rekap').style.display = 'block';
             if (p.role === 'admin') {
                 document.getElementById('nav-absen').style.display = 'block';
                 document.getElementById('nav-staff').style.display = 'block';
@@ -421,8 +468,51 @@
 
     async function izinKembali() { await client.from('izin').update({ jam_kembali: new Date().toISOString() }).match({ user_id: userSession.id }).is('jam_kembali', null); fetchMonitor(); }
 
-    async function logout() { await client.auth.signOut(); location.reload(); }
+    // Baris 466: fungsi logout bawaan kamu
+async function logout() { await client.auth.signOut(); location.reload(); }
+
+// PASTE DI SINI (Mulai Baris 467)
+async function fetchRekapPelanggaran() {
+    const bulan = document.getElementById('filter-bulan-rekap').value;
+    if(!bulan) return alert("Pilih bulan dulu!");
+    
+    // Cara aman menentukan rentang waktu bulan
+    const start = `${bulan}-01T00:00:00`;
+    const lastDay = new Date(bulan.split('-')[0], bulan.split('-')[1], 0).getDate();
+    const end = `${bulan}-${lastDay}T23:59:59`;
+
+    const [resAbsen, resIzin] = await Promise.all([
+        client.from('absensi').select('*, profiles(nama_staf)').gte('waktu_masuk', start).lte('waktu_masuk', end),
+        client.from('izin').select('*, profiles(nama_staf)').gte('jam_keluar', start).lte('jam_keluar', end)
+    ]);
+
+    let html = '';
+    resAbsen.data?.forEach(a => {
+        const jam = new Date(a.waktu_masuk);
+        // Aturan: 10.15 pagi. 
+        if(jam.getHours() > 10 || (jam.getHours() === 10 && jam.getMinutes() > 15)) {
+            html += `<tr><td>${a.profiles?.nama_staf || 'Staff'}</td><td>TELAT MASUK</td><td>${jam.toLocaleDateString()}</td><td>Jam ${jam.toLocaleTimeString()}</td><td>1.000 BATH</td></tr>`;
+        }
+    });
+
+    resIzin.data?.forEach(i => {
+        if(i.jam_kembali) {
+            const diff = Math.floor((new Date(i.jam_kembali) - new Date(i.jam_keluar)) / 60000);
+            
+            // Perbaikan mapping limit durasi sesuai dropdown
+            let limit = 15; // Default (Toilet)
+            if (i.keperluan === 'Istirahat') limit = 120;
+            else if (i.keperluan === 'Ambil Makan') limit = 20;
+            else if (i.keperluan === 'Merokok') limit = 10; 
+
+            if(diff > limit) {
+                const denda = (i.keperluan === 'Merokok') ? '500 BATH' : '1.000 BATH';
+                html += `<tr><td>${i.profiles?.nama_staf || 'Staff'}</td><td>TELAT IZIN</td><td>${new Date(i.jam_keluar).toLocaleDateString()}</td><td>${i.keperluan} (${diff}m)</td><td>${denda}</td></tr>`;
+            }
+        }
+    });
+    document.getElementById('body-rekap-pelanggaran').innerHTML = html || '<tr><td colspan="5">Tidak ada pelanggaran.</td></tr>';
+}
 </script>
 </body>
 </html>
-
